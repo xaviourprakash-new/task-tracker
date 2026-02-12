@@ -1,6 +1,7 @@
 using Cortex.Mediator.Commands;
 using FluentValidation;
 using TaskTracker.API.Application.Common.Exceptions;
+using TaskTracker.API.Application.Common.Helpers;
 using TaskTracker.API.Application.Common.Interfaces;
 using TaskTracker.API.Application.DTOs;
 using TaskTracker.API.Domain.Entities;
@@ -28,15 +29,7 @@ public class RegisterCommandHandler : ICommandHandler<RegisterCommand, AuthRespo
 
     public async Task<AuthResponse> Handle(RegisterCommand command, CancellationToken cancellationToken)
     {
-        var validationResult = await _validator.ValidateAsync(command.Request, cancellationToken);
-        if (!validationResult.IsValid)
-        {
-            var errors = validationResult.Errors
-                .GroupBy(e => e.PropertyName)
-                .ToDictionary(g => g.Key, g => g.Select(e => e.ErrorMessage).ToArray());
-
-            throw new BadRequestException("Validation failed.", errors);
-        }
+        await ValidationHelper.ValidateAndThrowAsync(_validator, command.Request, cancellationToken);
 
         var existingUser = await _userRepository.GetByEmailAsync(command.Request.Email);
         if (existingUser is not null)

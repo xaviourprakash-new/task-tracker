@@ -1,6 +1,212 @@
-@TaskTracker.API_HostAddress = http://localhost:5272
+@baseUrl = https://localhost:7269
+@token = {{login.response.body.data.token}}
 
-GET {{TaskTracker.API_HostAddress}}/weatherforecast/
-Accept: application/json
+### ============================================================
+### 🔐 AUTH ENDPOINTS
+### ============================================================
 
-###
+### 1. Register - Valid
+# @name register
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "fullName": "John Doe",
+  "email": "john@example.com",
+  "password": "Pass@123"
+}
+
+### 2. Register - Duplicate Email (409 Conflict)
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "fullName": "John Doe",
+  "email": "john@example.com",
+  "password": "Pass@123"
+}
+
+### 3. Register - Validation Error (400 Bad Request)
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "fullName": "",
+  "email": "invalid-email",
+  "password": "12"
+}
+
+### 4. Login - Valid
+# @name login
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "john@example.com",
+  "password": "Pass@123"
+}
+
+### 5. Login - Invalid Credentials (401 Unauthorized)
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "john@example.com",
+  "password": "WrongPassword"
+}
+
+### 6. Login - Validation Error (400 Bad Request)
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "",
+  "password": ""
+}
+
+### ============================================================
+### 📋 TASK ENDPOINTS (Require Bearer Token)
+### ============================================================
+
+### 7. Create Task - High Priority
+# @name createTask1
+POST {{baseUrl}}/tasks
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "title": "Deploy to production",
+  "description": "Deploy the API to Azure App Service",
+  "priority": "High"
+}
+
+### 8. Create Task - Medium Priority
+# @name createTask2
+POST {{baseUrl}}/tasks
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "title": "Write unit tests",
+  "description": "Add tests for status transition logic",
+  "priority": "Medium"
+}
+
+### 9. Create Task - Low Priority
+POST {{baseUrl}}/tasks
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "title": "Update README",
+  "description": "Add API documentation to README.md",
+  "priority": "Low"
+}
+
+### 10. Create Task - Validation Error: Empty Title (400)
+POST {{baseUrl}}/tasks
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "title": "",
+  "description": "This should fail",
+  "priority": "High"
+}
+
+### 11. Create Task - Validation Error: Title Too Long (400)
+POST {{baseUrl}}/tasks
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "title": "This title is way too long and exceeds the fifty character limit set by validation",
+  "description": "This should fail",
+  "priority": "Medium"
+}
+
+### 12. Create Task - Without Auth (401 Unauthorized)
+POST {{baseUrl}}/tasks
+Content-Type: application/json
+
+{
+  "title": "No auth token",
+  "priority": "Low"
+}
+
+### ============================================================
+### 📋 GET TASKS
+### ============================================================
+
+### 13. Get All Tasks (sorted by priority)
+GET {{baseUrl}}/tasks
+Authorization: Bearer {{token}}
+
+### 14. Get Tasks - Filter by Status
+GET {{baseUrl}}/tasks?status=Pending
+Authorization: Bearer {{token}}
+
+### 15. Get Tasks - Filter by Priority
+GET {{baseUrl}}/tasks?priority=High
+Authorization: Bearer {{token}}
+
+### 16. Get Tasks - Filter by Both
+GET {{baseUrl}}/tasks?status=Pending&priority=Medium
+Authorization: Bearer {{token}}
+
+### 17. Get Task By Id - Valid (use id=1)
+GET {{baseUrl}}/tasks/1
+Authorization: Bearer {{token}}
+
+### 18. Get Task By Id - Not Found (404)
+GET {{baseUrl}}/tasks/999
+Authorization: Bearer {{token}}
+
+### ============================================================
+### 🔄 UPDATE TASK STATUS
+### ============================================================
+
+### 19. Update Status: Pending → InProgress (Valid)
+PUT {{baseUrl}}/tasks/1/status
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "status": "InProgress"
+}
+
+### 20. Update Status: InProgress → Completed (Valid)
+PUT {{baseUrl}}/tasks/1/status
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "status": "Completed"
+}
+
+### 21. Update Status: Completed → InProgress (409 Conflict)
+PUT {{baseUrl}}/tasks/1/status
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "status": "InProgress"
+}
+
+### 22. Update Status: Pending → Completed (400 Invalid Transition)
+PUT {{baseUrl}}/tasks/2/status
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "status": "Completed"
+}
+
+### 23. Update Status - Task Not Found (404)
+PUT {{baseUrl}}/tasks/999/status
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "status": "InProgress"
+}

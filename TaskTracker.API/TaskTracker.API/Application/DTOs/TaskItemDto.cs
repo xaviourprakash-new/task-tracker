@@ -1,5 +1,3 @@
-using TaskTracker.API.Domain.Enums;
-
 namespace TaskTracker.API.Application.DTOs;
 
 public class TaskItemDto

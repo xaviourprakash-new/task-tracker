@@ -27,24 +27,27 @@ public class TasksController : ControllerBase
     [HttpPost]
     [ProducesResponseType(typeof(ApiResponse<TaskItemDto>), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> CreateTask([FromBody] CreateTaskRequest request)
+    public async Task<IActionResult> CreateTask([FromBody] CreateTaskRequest request, CancellationToken cancellationToken)
     {
-        throw new NotImplementedException();
+        var result = await _mediator.SendCommandAsync<CreateTaskCommand, TaskItemDto>(new CreateTaskCommand(request), cancellationToken);
+        return StatusCode(StatusCodes.Status201Created, ApiResponse.SuccessResponse(result, "Task created successfully."));
     }
 
     [HttpGet]
     [ProducesResponseType(typeof(ApiResponse<IEnumerable<TaskItemDto>>), StatusCodes.Status200OK)]
-    public async Task<IActionResult> GetAllTasks([FromQuery] TaskItemStatus? status, [FromQuery] TaskItemPriority? priority)
+    public async Task<IActionResult> GetAllTasks([FromQuery] TaskItemStatus? status, [FromQuery] TaskItemPriority? priority, CancellationToken cancellationToken)
     {
-        throw new NotImplementedException();
+        var result = await _mediator.SendQueryAsync<GetAllTasksQuery, IEnumerable<TaskItemDto>>(new GetAllTasksQuery(status, priority), cancellationToken);
+        return Ok(ApiResponse.SuccessResponse(result, "Tasks retrieved successfully."));
     }
 
     [HttpGet("{id:int}")]
     [ProducesResponseType(typeof(ApiResponse<TaskItemDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> GetTaskById(int id)
+    public async Task<IActionResult> GetTaskById(int id, CancellationToken cancellationToken)
     {
-        throw new NotImplementedException();
+        var result = await _mediator.SendQueryAsync<GetTaskByIdQuery, TaskItemDto?>(new GetTaskByIdQuery(id), cancellationToken);
+        return Ok(ApiResponse.SuccessResponse(result, "Task retrieved successfully."));
     }
 
     [HttpPut("{id:int}/status")]
@@ -52,8 +55,9 @@ public class TasksController : ControllerBase
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
-    public async Task<IActionResult> UpdateTaskStatus(int id, [FromBody] UpdateTaskStatusRequest request)
+    public async Task<IActionResult> UpdateTaskStatus(int id, [FromBody] UpdateTaskStatusRequest request, CancellationToken cancellationToken)
     {
-        throw new NotImplementedException();
+        var result = await _mediator.SendCommandAsync<UpdateTaskStatusCommand, TaskItemDto>(new UpdateTaskStatusCommand(id, request), cancellationToken);
+        return Ok(ApiResponse.SuccessResponse(result, "Task status updated successfully."));
     }
 }

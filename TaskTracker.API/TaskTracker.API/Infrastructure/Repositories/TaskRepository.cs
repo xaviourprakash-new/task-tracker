@@ -15,12 +15,12 @@ public class TaskRepository : ITaskRepository
         _context = context;
     }
 
-    public async Task<TaskItem?> GetByIdAsync(int id)
+    public async Task<TaskItem?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
     {
-        return await _context.Tasks.FindAsync(id);
+        return await _context.Tasks.FindAsync([id], cancellationToken);
     }
 
-    public async Task<IEnumerable<TaskItem>> GetAllAsync(TaskItemStatus? status, TaskItemPriority? priority)
+    public async Task<IEnumerable<TaskItem>> GetAllAsync(TaskItemStatus? status, TaskItemPriority? priority, CancellationToken cancellationToken = default)
     {
         var query = _context.Tasks.AsQueryable();
 
@@ -30,20 +30,20 @@ public class TaskRepository : ITaskRepository
         if (priority.HasValue)
             query = query.Where(t => t.Priority == priority.Value);
 
-        return await query.ToListAsync();
+        return await query.ToListAsync(cancellationToken);
     }
 
-    public async Task<TaskItem> CreateAsync(TaskItem taskItem)
+    public async Task<TaskItem> CreateAsync(TaskItem taskItem, CancellationToken cancellationToken = default)
     {
         _context.Tasks.Add(taskItem);
-        await _context.SaveChangesAsync();
+        await _context.SaveChangesAsync(cancellationToken);
         return taskItem;
     }
 
-    public async Task<TaskItem> UpdateAsync(TaskItem taskItem)
+    public async Task<TaskItem> UpdateAsync(TaskItem taskItem, CancellationToken cancellationToken = default)
     {
         _context.Tasks.Update(taskItem);
-        await _context.SaveChangesAsync();
+        await _context.SaveChangesAsync(cancellationToken);
         return taskItem;
     }
 }
