@@ -1,5 +1,5 @@
-using System.Net;
-using System.Text.Json;
+using Microsoft.AspNetCore.Mvc;
+using TaskTracker.API.Application.Common.Exceptions;
 
 namespace TaskTracker.API.Middleware;
 
@@ -22,23 +22,65 @@ public class GlobalExceptionMiddleware
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "An unhandled exception occurred.");
             await HandleExceptionAsync(context, ex);
         }
     }
 
-    private static async Task HandleExceptionAsync(HttpContext context, Exception exception)
+    private async Task HandleExceptionAsync(HttpContext context, Exception exception)
     {
-        context.Response.ContentType = "application/json";
-        context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
-
-        var response = new
+        var problemDetails = exception switch
         {
-            StatusCode = context.Response.StatusCode,
-            Message = "An unexpected error occurred. Please try again later."
+            NotFoundException notFound => new ProblemDetails
+            {
+                Status = StatusCodes.Status404NotFound,
+                Title = "Resource Not Found",
+                Detail = notFound.Message
+            },
+
+            BadRequestException badRequest => CreateBadRequestProblemDetails(badRequest),
+
+            ConflictException conflict => new ProblemDetails
+            {
+                Status = StatusCodes.Status409Conflict,
+                Title = "Conflict",
+                Detail = conflict.Message
+            },
+
+            UnauthorizedException unauthorized => new ProblemDetails
+            {
+                Status = StatusCodes.Status401Unauthorized,
+                Title = "Authentication Failed",
+                Detail = unauthorized.Message
+            },
+
+            _ => new ProblemDetails
+            {
+                Status = StatusCodes.Status500InternalServerError,
+                Title = "Internal Server Error",
+                Detail = "An unexpected error occurred. Please try again later."
+            }
         };
 
-        var json = JsonSerializer.Serialize(response);
-        await context.Response.WriteAsync(json);
+        if (problemDetails.Status == StatusCodes.Status500InternalServerError)
+            _logger.LogError(exception, "An unhandled exception occurred.");
+
+        problemDetails.Instance = context.Request.Path;
+
+        context.Response.StatusCode = problemDetails.Status ?? StatusCodes.Status500InternalServerError;
+        context.Response.ContentType = "application/problem+json";
+
+        await context.Response.WriteAsJsonAsync(problemDetails);
+    }
+
+    private static ValidationProblemDetails CreateBadRequestProblemDetails(BadRequestException exception)
+    {
+        var problemDetails = new ValidationProblemDetails(exception.Errors)
+        {
+            Status = StatusCodes.Status400BadRequest,
+            Title = "Validation Failed",
+            Detail = exception.Message
+        };
+
+        return problemDetails;
     }
 }
