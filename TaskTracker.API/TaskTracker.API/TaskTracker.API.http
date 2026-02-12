@@ -1,5 +1,5 @@
 @baseUrl = https://localhost:7269
-@token = {{login.response.body.data.token}}
+@token = {{login.response.headers.X-Auth-Token}}
 
 ### ============================================================
 ### 🔐 AUTH ENDPOINTS

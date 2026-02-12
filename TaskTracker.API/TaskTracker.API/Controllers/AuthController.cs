@@ -26,6 +26,7 @@ public class AuthController : ControllerBase
     public async Task<IActionResult> Register([FromBody] RegisterRequest request, CancellationToken cancellationToken)
     {
         var result = await _mediator.SendCommandAsync<RegisterCommand, AuthResponse>(new RegisterCommand(request), cancellationToken);
+        Response.Headers.Append("X-Auth-Token", result.Token);
         return StatusCode(StatusCodes.Status201Created, ApiResponse.SuccessResponse(result, "User registered successfully."));
     }
 
@@ -35,6 +36,7 @@ public class AuthController : ControllerBase
     public async Task<IActionResult> Login([FromBody] LoginRequest request, CancellationToken cancellationToken)
     {
         var result = await _mediator.SendCommandAsync<LoginCommand, AuthResponse>(new LoginCommand(request), cancellationToken);
+        Response.Headers.Append("X-Auth-Token", result.Token);
         return Ok(ApiResponse.SuccessResponse(result, "Login successful."));
     }
 }
