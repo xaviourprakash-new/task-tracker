@@ -15,7 +15,12 @@ public static class ValidationHelper
                 .GroupBy(e => e.PropertyName)
                 .ToDictionary(g => g.Key, g => g.Select(e => e.ErrorMessage).ToArray());
 
-            throw new BadRequestException("Validation failed.", errors);
+            var failedFields = string.Join(", ", errors.Keys);
+            var message = errors.Count == 1
+                ? $"Validation failed for {failedFields}: {errors.Values.First().First()}"
+                : $"Validation failed for fields: {failedFields}.";
+
+            throw new BadRequestException(message, errors);
         }
     }
 }
