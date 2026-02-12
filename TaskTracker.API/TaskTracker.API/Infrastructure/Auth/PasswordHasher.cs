@@ -16,15 +16,22 @@ public class PasswordHasher : IPasswordHasher
 
     public bool Verify(string password, string hashedPassword)
     {
-        var parts = hashedPassword.Split(':');
-        if (parts.Length != 2) return false;
+        try
+        {
+            var parts = hashedPassword.Split(':');
+            if (parts.Length != 2) return false;
 
-        var key = Convert.FromBase64String(parts[0]);
-        var storedHash = Convert.FromBase64String(parts[1]);
+            var key = Convert.FromBase64String(parts[0]);
+            var storedHash = Convert.FromBase64String(parts[1]);
 
-        using var hmac = new HMACSHA512(key);
-        var computedHash = hmac.ComputeHash(Encoding.UTF8.GetBytes(password));
+            using var hmac = new HMACSHA512(key);
+            var computedHash = hmac.ComputeHash(Encoding.UTF8.GetBytes(password));
 
-        return CryptographicOperations.FixedTimeEquals(computedHash, storedHash);
+            return CryptographicOperations.FixedTimeEquals(computedHash, storedHash);
+        }
+        catch (FormatException)
+        {
+            return false;
+        }
     }
 }
